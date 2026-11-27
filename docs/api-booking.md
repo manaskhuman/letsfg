@@ -241,6 +241,51 @@ but the responses and timings are production's, and you choose what happens
 (`price_change`, `seller_failed`, `payment_declined`, ...). See
 [Booking in the sandbox](api-sandbox.md#booking-in-the-sandbox).
 
+## One service per traveller: flights and stays 24 hours apart
+
+LetsFG sells flights and stays as separate services, never together as a
+package (EU package-travel law). So a traveller who has one type booked with
+LetsFG cannot be sold the other type until **24 hours after the first was
+booked**. A booking that is still in progress counts too. A checkout that was
+opened but never paid does not.
+
+**On the Developer API this rule applies to each traveller, not to your API
+key.** You are probably booking for many different people, so we match
+travellers, not you:
+
+- **Matched:** each traveller on the booking. A flight passenger is matched by
+  first name, last name and date of birth. A hotel guest is matched the same
+  way when you send `date_of_birth` (optional, never sent to the hotel).
+  Without a date of birth, a guest is matched by first and last name, and only
+  when the stay overlaps that traveller's flight dates.
+- **Never matched:** your API key, your connected card or balance, and the
+  contact e-mail you send. Booking a flight for one customer and a stay for
+  another customer a minute later is fine, even with the same e-mail address.
+
+A traveller is matched against every LetsFG booking they have. That includes
+one they made themselves on letsfg.co.
+
+A refused booking answers `409` with nothing charged or held:
+
+```json
+{
+  "error": "package_blocked",
+  "code": "one_service_per_visit",
+  "scope": "traveller",
+  "retry": false,
+  "requested_type": "hotel",
+  "existing_type": "flight",
+  "available_from": "2026-11-28T14:05+00:00",
+  "message": "We sell flights and stays separately and do not sell packages. ...",
+  "say_to_traveller": "We sell flights and stays separately and do not sell packages. ..."
+}
+```
+
+Show `say_to_traveller` to the traveller. Don't retry for the same traveller
+with a different e-mail, card or spelling: the answer won't change. When
+`available_from` is present, that's when this traveller can book the other
+type. Your other customers are not affected.
+
 ## Refusals
 
 Nothing is charged on any refusal. Every one is JSON with an `error` you can
@@ -256,7 +301,7 @@ branch on.
 | `402` | `payment_method_required` | `POST /agents/connect-payment`, open the link |
 | `402` | `payment_declined` | Read `decline_reason`; the traveller's bank refused the hold |
 | `404` | `search_not_found` / `offer_not_found` | The search aged out (6h) — search again |
-| `409` | `package_blocked` | This traveller booked in the last 24h; package-travel rules |
+| `409` | `package_blocked` | A passenger on this booking already has a stay with LetsFG from the last 24h. The check is per traveller, never per API key. See [One service per traveller](#one-service-per-traveller-flights-and-stays-24-hours-apart) |
 | `409` | `too_many_attempts` | The payment under this `idempotency_key` was declined 5 times; connect another method and use a new key |
 | `503` | `temporarily_unavailable` | Retry shortly with the same `idempotency_key` |
 

@@ -129,6 +129,20 @@ hold is released. The party itself travels with the offer's `session_id`.
            {"title": "Ms", "first_name": "Zofia", "last_name": "Kowalska"}]
 ```
 
+**One service per traveller.** A guest who has a flight with LetsFG booked in
+the last 24 hours, or one still being booked, cannot be sold a stay yet. The
+booking answers `409 package_blocked` with `scope: "traveller"` and
+`available_from`, and nothing is held. The check is per guest, never per API
+key, card or contact e-mail, so your other customers are unaffected. Add an
+optional `date_of_birth` (`YYYY-MM-DD`) to a guest to have them matched
+exactly. It is never sent to the hotel. Without it, a guest is matched by first
+and last name, and only when the stay overlaps that traveller's flight. See
+[One service per traveller](api-booking.md#one-service-per-traveller-flights-and-stays-24-hours-apart).
+
+```json
+"guests": [{"title": "Mr", "first_name": "Jan", "last_name": "Kowalski", "date_of_birth": "1988-04-02"}]
+```
+
 Hotel search is look-to-book: 1,000 searches are free after every hotel booking,
 then blocks of 1,000 for $5.00 from prepaid balance. A stay a guest completes on
 letsfg.co through a hotel's `booking_url` counts as a hotel booking too.

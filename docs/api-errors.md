@@ -29,6 +29,7 @@
 | `410` | A Stripe-era route (`setup-payment`, `hosted-checkout`, `billing-portal`, `bookings/unlock`, `bookings/book`) | The body names the replacement path |
 | `403` | Search access still disabled for the key | Check `agents/me`, then top up or finish onboarding |
 | `409` | Billing setup conflict, often around top-up state | Re-read account state before retrying |
+| `409` | `package_blocked` on a booking: a traveller on it already has the other type (flight or stay) from the last 24h | Don't retry for that traveller. The check is per traveller, never per API key. See [One service per traveller](api-booking.md#one-service-per-traveller-flights-and-stays-24-hours-apart) |
 | `429` | Too many requests | Back off and retry later |
 
 ## Request-body limits exposed by the public contract
